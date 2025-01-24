@@ -1,0 +1,93 @@
+#define F_CPU 8000000UL
+#include <avr/io.h>
+#include <util/delay.h>
+
+
+#define LEFT_SENSOR    PA0
+#define CENTER_SENSOR  PA1
+#define RIGHT_SENSOR   PA2
+
+
+#define LEFT_MOTOR_FWD   PB0
+#define LEFT_MOTOR_REV   PB1
+#define RIGHT_MOTOR_FWD  PB2
+#define RIGHT_MOTOR_REV  PB3
+
+
+
+// Motor control functions
+void stop(void) {
+	PORTB &= ~((1 << LEFT_MOTOR_FWD) | (1 << LEFT_MOTOR_REV) |
+	(1 << RIGHT_MOTOR_FWD) | (1 << RIGHT_MOTOR_REV));
+	
+}
+
+void forward(void) {
+	PORTB |= (1 << LEFT_MOTOR_FWD) | (1 << RIGHT_MOTOR_FWD);
+	PORTB &= ~((1 << LEFT_MOTOR_REV) | (1 << RIGHT_MOTOR_REV));
+}
+
+void turn_right(void) {
+	PORTB |= (1 << LEFT_MOTOR_FWD);
+	PORTB &= ~((1 << LEFT_MOTOR_REV) | (1 << RIGHT_MOTOR_FWD) | (1 << RIGHT_MOTOR_REV));
+}
+
+void turn_left(void) {
+	PORTB |= (1 << RIGHT_MOTOR_FWD);
+	PORTB &= ~((1 << RIGHT_MOTOR_REV) | (1 << LEFT_MOTOR_FWD) | (1 << LEFT_MOTOR_REV));
+}
+
+void sharp_right(void) {
+	PORTB |= (1 << LEFT_MOTOR_FWD) | (1 << RIGHT_MOTOR_REV);
+	PORTB &= ~((1 << LEFT_MOTOR_REV) | (1 << RIGHT_MOTOR_FWD));
+}
+
+void sharp_left(void) {
+	PORTB |= (1 << RIGHT_MOTOR_FWD) | (1 << LEFT_MOTOR_REV);
+	PORTB &= ~((1 << RIGHT_MOTOR_REV) | (1 << LEFT_MOTOR_FWD));
+}
+
+int main(void) {
+
+	DDRA &= ~((1 << LEFT_SENSOR) | (1 << CENTER_SENSOR) | (1 << RIGHT_SENSOR));
+	
+	
+	DDRB |= (1 << LEFT_MOTOR_FWD) | (1 << LEFT_MOTOR_REV) |
+	(1 << RIGHT_MOTOR_FWD) | (1 << RIGHT_MOTOR_REV);
+	
+	
+	PORTA |= (1 << LEFT_SENSOR) | (1 << CENTER_SENSOR) | (1 << RIGHT_SENSOR);
+	
+	while(1) {
+		uint8_t left = (PINA & (1 << LEFT_SENSOR));
+		uint8_t center = (PINA & (1 << CENTER_SENSOR));
+		uint8_t right = (PINA & (1 << RIGHT_SENSOR));
+		
+	
+		if (left && !center && right) {  
+			forward();
+		}
+		else if (!left && center && right) { 
+			turn_left();
+		}
+		else if (left && center && !right) {  
+			turn_right();
+		}
+		else if (!left && !center && right) {  
+			sharp_left();
+		}
+		else if (left && !center && !right) {  
+			sharp_right();
+		}
+		else if (!left && !center && !right) { 
+			forward();
+		}
+		else if (left && center && right) { 
+			stop();
+		}
+		
+		_delay_ms(100); 
+	}
+	
+	return 0;
+}
